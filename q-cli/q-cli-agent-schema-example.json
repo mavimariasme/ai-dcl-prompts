@@ -1,0 +1,78 @@
+{
+  "$schema": "https://raw.githubusercontent.com/aws/amazon-q-developer-cli/refs/heads/main/schemas/agent-v1.json",
+  "name": "projeto-torre-hanoi",
+  "description": "Agente especifico para o projeto. Deve usar Java 17 ou 21, Spring Boot 3.x, PostgreSQL, Junit e mockito, maven, github actions para CI/CD, AWS para infraestrutura de Cloud, CDK para IaC. Arquitetura: padrão MVC, Strategy patterns para algoritmos de resolução do jogo torres de hanoi, PascalCase para classes. Testes: cobertura de testes mínima deve ser 80%.",
+  "prompt": "You are a specialized coding agent for the Torre de Hanoi project. Follow these technical requirements:\n\n**Technology Stack:**\n- Java 17 or 21\n- Spring Boot 3.x\n- PostgreSQL database\n- JUnit and Mockito for testing\n- Maven for build management\n- GitHub Actions for CI/CD\n- AWS for cloud infrastructure\n- AWS CDK for Infrastructure as Code\n\n**Architecture Patterns:**\n- MVC (Model-View-Controller) pattern\n- Strategy pattern for Torre de Hanoi solving algorithms\n- PascalCase naming convention for classes\n\n**Testing Requirements:**\n- Minimum 80% test coverage\n- Use JUnit for unit tests\n- Use Mockito for mocking dependencies\n\n**Code Quality:**\n- Follow Java best practices\n- Implement clean, maintainable code\n- Ensure proper separation of concerns\n- Use appropriate design patterns where beneficial\n\nAlways prioritize these specifications when generating code, configurations, or providing technical guidance for this project.",
+  "mcpServers": {
+    "awslabs.cdk-mcp-server": {
+      "command": "uvx",
+      "args": [
+        "awslabs.cdk-mcp-server@latest"
+      ],
+      "env": {
+        "FASTMCP_LOG_LEVEL": "ERROR"
+      },
+      "timeout": 120000,
+      "disabled": false
+    },
+    "github": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e",
+        "GITHUB_PERSONAL_ACCESS_TOKEN",
+        "ghcr.io/github/github-mcp-server"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "[]"
+      },
+      "timeout": 60000,
+      "disabled": false
+    },
+    "awslabs.aws-documentation-mcp-server": {
+      "command": "uvx",
+      "args": ["awslabs.aws-documentation-mcp-server@latest"],
+      "env": {
+        "FASTMCP_LOG_LEVEL": "ERROR",
+        "AWS_DOCUMENTATION_PARTITION": "aws"
+      },
+      "disabled": false,
+      "autoApprove": []
+    },
+    "awslabs.frontend-mcp-server": {
+      "disabled": false,
+      "timeout": 60,
+      "type": "stdio",
+      "command": "uv",
+      "args": [
+        "tool",
+        "run",
+        "--from",
+        "awslabs.frontend-mcp-server@latest",
+        "awslabs.frontend-mcp-server.exe"
+      ],
+      "env": {
+        "FASTMCP_LOG_LEVEL": "ERROR",
+        "AWS_PROFILE": "[]",
+        "AWS_REGION": "us-east-1"
+      }
+    }
+  },
+  "tools": [
+    "*"
+  ],
+  "toolAliases": {},
+  "allowedTools": [
+    "fs_read"
+  ],
+  "resources": [
+    "file://AmazonQ.md",
+    "file://README.md",
+    "file://.amazonq/rules/**/*.md"
+  ],
+  "hooks": {},
+  "toolsSettings": {},
+  "useLegacyMcpJson": false
+}
