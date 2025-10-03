@@ -1,0 +1,177 @@
+{
+  "name": "aws-data-specialist",
+  "description": "Agente especializado em administração de bancos de dados AWS com expertise em DynamoDB, PostgreSQL e Redshift",
+  "prompt": "Você é um Database Administrator (DBA) especialista em serviços de dados da AWS. Você tem profundo conhecimento em DynamoDB, PostgreSQL (RDS/Aurora), Redshift, e melhores práticas de modelagem de dados, otimização de queries, backup/recovery, e segurança de dados. Você pode analisar schemas, sugerir otimizações de performance, diagnosticar problemas e implementar soluções seguindo as melhores práticas da AWS.",
+  "mcpServers": {
+    "dynamodb": {
+      "command": "uvx",
+      "args": ["awslabs.dynamodb-mcp-server@1.0.9"],
+      "env": {
+        "DDB-MCP-READONLY": "true",
+        "AWS_PROFILE": "default",
+        "AWS_REGION": "us-west-2",
+        "FASTMCP_LOG_LEVEL": "ERROR"
+      },
+      "timeout": 30000
+    },
+    "postgres": {
+      "command": "uvx",
+      "args": [
+        "awslabs.postgres-mcp-server@latest",
+        "--resource_arn", "${POSTGRES_RESOURCE_ARN}",
+        "--secret_arn", "${POSTGRES_SECRET_ARN}",
+        "--database", "${POSTGRES_DATABASE}",
+        "--region", "${AWS_REGION}",
+        "--readonly", "True"
+      ],
+      "env": {
+        "AWS_PROFILE": "default",
+        "AWS_REGION": "us-east-1",
+        "FASTMCP_LOG_LEVEL": "ERROR"
+      },
+      "timeout": 60000
+    },
+    "redshift": {
+      "command": "uvx",
+      "args": ["awslabs.redshift-mcp-server@latest"],
+      "env": {
+        "AWS_PROFILE": "default",
+        "AWS_DEFAULT_REGION": "us-east-1",
+        "FASTMCP_LOG_LEVEL": "INFO"
+      },
+      "timeout": 120000
+    }
+  },
+  "tools": [
+    "fs_read",
+    "fs_write",
+    "execute_bash",
+    "use_aws",
+    "knowledge",
+    "thinking",
+    "@dynamodb",
+    "@postgres",
+    "@redshift"
+  ],
+  "allowedTools": [
+    "fs_read",
+    "knowledge",
+    "thinking",
+    "@dynamodb/describe_table",
+    "@dynamodb/list_tables",
+    "@dynamodb/query",
+    "@dynamodb/scan",
+    "@postgres/query_read_only",
+    "@postgres/list_tables",
+    "@postgres/describe_table",
+    "@redshift/query_read_only",
+    "@redshift/list_schemas",
+    "@redshift/list_tables"
+  ],
+  "toolAliases": {
+    "@dynamodb/describe_table": "ddb_describe",
+    "@dynamodb/list_tables": "ddb_list",
+    "@dynamodb/query": "ddb_query",
+    "@dynamodb/scan": "ddb_scan",
+    "@postgres/query_read_only": "pg_query",
+    "@postgres/list_tables": "pg_tables",
+    "@postgres/describe_table": "pg_describe",
+    "@redshift/query_read_only": "rs_query",
+    "@redshift/list_schemas": "rs_schemas",
+    "@redshift/list_tables": "rs_tables"
+  },
+  "toolsSettings": {
+    "fs_write": {
+      "allowedPaths": [
+        "sql/**",
+        "scripts/**",
+        "migrations/**",
+        "backups/**",
+        "reports/**",
+        "*.sql",
+        "*.json",
+        "*.yaml",
+        "*.md"
+      ]
+    },
+    "execute_bash": {
+      "allowedCommands": [
+        "aws dynamodb describe-table",
+        "aws dynamodb list-tables",
+        "aws rds describe-db-instances",
+        "aws redshift describe-clusters",
+        "aws s3 ls",
+        "aws s3 cp",
+        "pg_dump",
+        "psql",
+        "aws dms",
+        "aws glue"
+      ],
+      "autoAllowReadonly": true
+    },
+    "use_aws": {
+      "allowedServices": [
+        "dynamodb",
+        "rds",
+        "redshift",
+        "s3",
+        "glue",
+        "dms",
+        "secretsmanager",
+        "cloudwatch",
+        "iam"
+      ],
+      "autoAllowReadonly": true
+    }
+  },
+  "resources": [
+    "file://README.md",
+    "file://docs/database-schemas/**/*.md",
+    "file://docs/data-models/**/*.md",
+    "file://sql/**/*.sql",
+    "file://migrations/**/*.sql",
+    "file://scripts/**/*.sh",
+    "file://config/database.yaml"
+  ],
+  "hooks": {
+    "agentSpawn": [
+      {
+        "command": "echo '=== AWS Data Specialist Agent Initialized ==='",
+        "timeout_ms": 5000
+      },
+      {
+        "command": "aws sts get-caller-identity",
+        "timeout_ms": 10000,
+        "cache_ttl_seconds": 300
+      }
+    ],
+    "userPromptSubmit": [
+      {
+        "command": "date '+%Y-%m-%d %H:%M:%S - Query submitted'",
+        "timeout_ms": 1000
+      }
+    ],
+    "preToolUse": [
+      {
+        "matcher": "@dynamodb/*",
+        "command": "echo \"[$(date '+%Y-%m-%d %H:%M:%S')] DynamoDB operation initiated\" >> /tmp/dba_audit.log"
+      },
+      {
+        "matcher": "@postgres/*",
+        "command": "echo \"[$(date '+%Y-%m-%d %H:%M:%S')] PostgreSQL query initiated\" >> /tmp/dba_audit.log"
+      },
+      {
+        "matcher": "@redshift/*",
+        "command": "echo \"[$(date '+%Y-%m-%d %H:%M:%S')] Redshift query initiated\" >> /tmp/dba_audit.log"
+      }
+    ],
+    "postToolUse": [
+      {
+        "matcher": "fs_write",
+        "command": "if [[ $1 == *.sql ]]; then sqlfluff fix $1 2>/dev/null || true; fi"
+      }
+    ]
+  },
+  "useLegacyMcpJson": false,
+  "model": "claude-sonnet-4"
+}
